@@ -10,7 +10,7 @@
 | 能力 | 说明 | 状态 |
 |------|------|:---:|
 | 免按键语音对话 | VAD 自动检测，说话即聊、静音即停 | 🚧 Phase 2 |
-| 语音控制电脑 | 打开应用 / 发消息 / 执行命令（白名单） | 🚧 Phase 3 |
+| 语音控制电脑 | 打开应用 / 输入内容 / 执行命令 / 定时提醒（白名单 + 安全确认） | ✅ Phase 3（文本版） |
 | 敲桌即走 | 双麦 TDOA 声音定位 + 底盘移动 | 🚧 Phase 4 |
 | 摇头点头拟人 | 双舵机软限位动作 + 大眼睛表情屏 | 🚧 Phase 1/5 |
 | 深睡待机 | Deep Sleep + 声音唤醒（<5mA） | 🚧 Phase 5 |
@@ -57,6 +57,26 @@ python -m venv .venv
 .venv/Scripts/python main.py
 ```
 
+### Phase 3：控制电脑（文本版，已可用）
+
+```bash
+# Agent 交互入口：用自然语言控制电脑
+.venv/Scripts/python agent.py
+# 试试：打开记事本 / 列出当前目录文件 / 5分钟后提醒我喝水
+
+# 全链路测试（shell / scheduler / launch_app / confirm / M3 工具循环）
+.venv/Scripts/python test_tools.py
+```
+
+| 工具 | 功能 | 危险级 |
+|------|------|:---:|
+| `launch_app` | 启动白名单应用（config.yaml → apps） | 中 |
+| `type_to_app` | 激活窗口 + 中文输入（剪贴板粘贴） | 高 |
+| `shell` | 白名单命令执行（前缀匹配，只读为主） | 高 |
+| `scheduler` | 定时提醒 | 低 |
+
+安全机制：工具执行全部**白名单化**（`config.yaml` 的 apps / commands），`high` 级操作执行前**弹窗确认**（`confirm.py`，Phase 2 语音闭环后升级为 TTS 语音确认）。
+
 ### 本地 ASR（语音转写）
 
 MiniMax Token Plan 未提供 ASR 接口（实测 `/v1/asr`、`/audio/transcriptions` 均 404），语音转写改用**本地 faster-whisper**：
@@ -81,10 +101,14 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 ├── config.yaml              # 全局配置（不入库）
 ├── hub/                     # 电脑端 Agent Hub（Python）
 │   ├── main.py              # 文本语音对话入口（Phase 0 ✅）
+│   ├── agent.py             # M3 工具调用循环（Phase 3 ✅）
 │   ├── minimax_client.py    # M3 / TTS / ASR 封装（✅）
 │   ├── asr.py               # 本地 faster-whisper 转写（✅）
 │   ├── settings.py          # 配置加载器（✅）
-│   ├── test_minimax.py      # 联通测试（✅）
+│   ├── confirm.py           # 危险操作安全确认（✅）
+│   ├── tools/               # 工具包：launch_app / type_to_app / shell / scheduler（✅）
+│   ├── test_minimax.py      # MiniMax 联通测试（✅）
+│   ├── test_tools.py        # 工具与 Agent 链路测试（✅）
 │   ├── requirements.txt
 │   └── models/              # 本地 ASR 模型（不入库）
 ├── firmware/                # ESP32 固件（Arduino，C 风格）
@@ -125,7 +149,7 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 | **Phase 0** | 电脑端先行：MiniMax 联通（对话 + TTS + 本地 ASR） | ✅ 完成 |
 | Phase 1 | 工程骨架 + 串口 + 屏幕点亮 | 待板子 |
 | Phase 2 | 语音闭环：录音 → ASR → M3 → TTS → 播放 | 待板子 |
-| Phase 3 | Agent 工具：语音控制电脑（白名单 + 安全确认） | 可并行 |
+| **Phase 3** | Agent 工具：语音控制电脑（白名单 + 安全确认） | ✅ 完成（文本版） |
 | Phase 4 | 移动 + 敲击定位 | 待板子 |
 | Phase 5 | 深睡待机 + 表情动画 + 定时提醒 + 外壳 | 待板子 |
 

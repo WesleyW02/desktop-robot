@@ -32,9 +32,22 @@ apps:
   notepad:
     name: 记事本
     path: notepad.exe
-    window_title: 记事本
+    window_title: ["记事本", "Notepad", "编辑器"]   # 中英文系统兼容
+  calculator:
+    name: 计算器
+    path: calc.exe
+    window_title: ["计算器", "Calculator"]
+  chrome:
+    name: Chrome 浏览器
+    path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    window_title: Chrome
+  explorer:
+    name: 资源管理器
+    path: explorer.exe
+    window_title: ["资源管理器", "File Explorer", "文件资源管理器"]
 
 # ---- 命令白名单（Phase 3 起使用，shell 工具只能执行这里的命令前缀）----
+# 默认只放只读命令；写操作命令（del / rm / git push 等）需谨慎评估后添加
 commands:
   - git status
   - git log

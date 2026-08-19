@@ -145,12 +145,14 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 - **验收**：先键盘文本闭环（M3→TTS 出声），再语音闭环（说话→机器人回答）
 
 ### Phase 3：Agent 工具调用（1-2 天）——核心能力
-- [ ] `agent.py`：M3 工具调用循环（tool_calls 解析 + 执行 + 结果回填）
-- [ ] `tools/launch_app` + `tools.yaml` 白名单
-- [ ] `tools/type_to_app`：pygetwindow 激活 + pyautogui 输入
-- [ ] `tools/shell`：白名单命令执行（如 git status、构建命令）
-- [ ] `confirm.py`：危险操作 TTS 询问 + 用户语音确认
-- **验收**：语音说"打开 WorkBuddy 发消息：帮我总结今天的待办"，全流程自动完成
+- [x] `agent.py`：M3 工具调用循环（tool_calls 解析 + 执行 + 结果回填）
+- [x] `tools/` 工具包：launch_app / type_to_app / shell / scheduler（白名单在 config.yaml）
+- [x] `tools/type_to_app`：pygetwindow 激活 + 剪贴板粘贴（支持中文，中英文窗口标题兼容）
+- [x] `tools/shell`：白名单命令执行（前缀匹配，只读为主）
+- [x] `confirm.py`：危险操作分级确认（low/medium/high，high 弹确认）
+- [x] `test_tools.py`：5 项测试全通过（含真实 M3 工具调用循环）
+- **验收**：文本输入"列出当前目录文件" → M3 自动调 shell(dir) → 回填汇报 ✅；
+  语音版（Phase 2 语音闭环后）：说"打开 WorkBuddy 发消息"全流程自动完成
 
 ### Phase 4：移动 + 敲击定位（2-3 天）
 - [ ] `chassis`：TB6612 双电机 PWM 控制 + 编码器计数 + 直线走（PID 可选）
