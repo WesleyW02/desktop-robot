@@ -145,7 +145,8 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 - **验收**：先键盘文本闭环（M3→TTS 出声），再语音闭环（说话→机器人回答）
 
 ### Phase 3：Agent 工具调用（1-2 天）——核心能力
-- [x] `agent.py`：M3 工具调用循环（tool_calls 解析 + 执行 + 结果回填）
+- [x] `agent.py`：**ReAct 框架 v2**——对话/行动分流；行动先规划（submit_plan 协议工具）
+  后执行（每步 思考→行动→观察）；三场景实测通过（纯对话 / 行动计划 / MCP 工具）
 - [x] `tools/` 工具包：launch_app / type_to_app / shell / scheduler（白名单在 config.yaml）
 - [x] `tools/type_to_app`：pygetwindow 激活 + 剪贴板粘贴（支持中文，中英文窗口标题兼容）
 - [x] `tools/shell`：白名单命令执行（前缀匹配，只读为主）

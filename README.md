@@ -57,6 +57,22 @@ python -m venv .venv
 .venv/Scripts/python main.py
 ```
 
+### Agent 架构（ReAct · 先规划后执行）
+
+`hub/agent.py` 采用 **ReAct 框架**，对话与行动走两套独立逻辑：
+
+```
+用户输入 → 分流轮：需要工具？
+   ├─ 否 → 直接对话（一轮回复，不规划）
+   └─ 是 → 行动模式
+        ├─ ① 规划轮：M3 先生成 JSON 执行计划（submit_plan 协议工具）
+        └─ ② 执行轮：每步 思考(🤔) → 行动(⚡) → 观察(👀)，直至计划完成
+```
+
+- **对话**：直接回复，零开销
+- **行动**：先规划后执行，执行中按观察结果灵活修正
+- 计划/执行过程实时打印，可观察 M3 的推理链路
+
 ### Phase 3：控制电脑（文本版，已可用）
 
 ```bash
@@ -125,7 +141,7 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 ├── config.yaml              # 全局配置（不入库）
 ├── hub/                     # 电脑端 Agent Hub（Python）
 │   ├── main.py              # 文本语音对话入口（Phase 0 ✅）
-│   ├── agent.py             # M3 工具调用循环（Phase 3 ✅）
+│   ├── agent.py             # ReAct Agent：分流 + 先规划后执行（Phase 3 ✅）
 │   ├── minimax_client.py    # M3 / TTS / ASR 封装（✅）
 │   ├── asr.py               # 本地 faster-whisper 转写（✅）
 │   ├── settings.py          # 配置加载器（✅）
