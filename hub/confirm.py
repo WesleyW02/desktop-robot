@@ -13,6 +13,7 @@
 
 Phase 2 语音闭环后，可在此接入语音确认（用户说"可以"即放行）。
 """
+import re
 import sys
 import threading
 
@@ -32,10 +33,39 @@ def _say(mm, text: str) -> None:
     threading.Thread(target=_run, daemon=True).start()
 
 
+def _parse_answer(ans: str, default: bool) -> bool:
+    """宽松解析确认输入。
+
+    放行：输入以 y/yes/是/确定 开头或结尾，或整句包含独立的确认词；
+    拒绝：输入以 n/no/否/不 开头或结尾，或包含否定词；
+    无法识别 → 默认拒绝（安全优先）。
+    """
+    a = (ans or "").strip().lower()
+    if not a:
+        return default
+
+    if a.startswith(("y", "yes", "是", "确", "放行", "可以", "好的")):
+        return True
+    if a.startswith(("n", "no", "否", "拒", "不要", "不行", "不可以")):
+        return False
+    if a.endswith(("y", "yes", "是", "确定", "放行")):
+        return True
+    if a.endswith(("n", "no", "否", "拒绝")):
+        return False
+
+    # 整句包含确认词 / 否定词（\b 保证 y/n 是独立词，避免误匹配）
+    if re.search(r"\b(?:yes|y)\b", a) or "是" in a or "确定" in a:
+        return True
+    if re.search(r"\b(?:no|n)\b", a) or "拒绝" in a or "不要" in a or "不行" in a:
+        return False
+    return default  # 无法识别 → 用默认值（默认拒绝）
+
+
 def confirm(question: str, mm=None, default: bool = False) -> bool:
     """向用户确认一个动作，返回是否放行。
 
-    mm 非空时先 TTS 播报；随后控制台等待 y/n 输入。
+    mm 非空时先 TTS 播报；随后控制台等待输入。
+    输入 y/是/确定（或包含这些词）放行；n/否/不要 拒绝；空回车用默认值。
     """
     if not CONFIRM_ENABLED:
         return True
@@ -43,13 +73,11 @@ def confirm(question: str, mm=None, default: bool = False) -> bool:
     _say(mm, question)
     prompt = f"\n⚠️ 安全确认：{question}\n  输入 y 放行 / n 拒绝 [{'Y/n' if default else 'y/N'}]: "
     try:
-        ans = input(prompt).strip().lower()
+        ans = input(prompt).strip()
     except (EOFError, KeyboardInterrupt):
         print("\n（未确认，已拒绝）")
         return False
-    if not ans:
-        return default
-    return ans in ("y", "yes", "是", "确定")
+    return _parse_answer(ans, default)
 
 
 def confirm_if(level: str, desc: str, mm=None) -> bool:
