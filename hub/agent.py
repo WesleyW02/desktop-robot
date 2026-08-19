@@ -27,6 +27,7 @@ from typing import List, Optional
 from confirm import confirm_if
 from mcp_tools import MCP_PREFIX, McpManager
 from minimax_client import MiniMaxClient
+from skills import get_danger as skill_danger, run_skill, skill_names
 from tools import DANGER, TOOL_FUNCS, TOOLS as BASE_TOOLS
 
 # 桌宠人设（对话与行动共用的人设基底）
@@ -104,9 +105,16 @@ PLAN_TOOL = {
 # 工具执行（带安全确认）
 # =====================================================================
 def execute_tool(name: str, args: dict, mm=None, mcp: Optional[McpManager] = None) -> str:
-    """执行单个工具（内置或 MCP，带安全确认），返回结果字符串。"""
+    """执行单个工具（内置 / 技能 / MCP，带安全确认），返回结果字符串。"""
     if name == "submit_plan":
         return _submit_plan(args.get("plan_steps", ""))
+
+    # 技能（hub/skills/ 下注册的自定义技能，按技能自身危险级确认）
+    if name in skill_names():
+        desc = f"执行技能「{name}」参数 {json.dumps(args, ensure_ascii=False)}"
+        if not confirm_if(skill_danger(name), desc, mm=mm):
+            return f"用户拒绝了操作：{name}"
+        return run_skill(name, args)
 
     # MCP 动态工具：mcp_<服务器>_<工具>
     if name.startswith(MCP_PREFIX):
@@ -223,8 +231,10 @@ def run_agent(mm: MiniMaxClient, messages: list,
 
     messages: 跨轮次对话历史（调用方持有，函数内只读不污染）。
     """
-    # 完整工具表 = 内置 + MCP 动态工具（不含协议工具 submit_plan）
-    tools = list(BASE_TOOLS)
+    # 完整工具表 = 内置 + 技能 + MCP 动态工具（不含协议工具 submit_plan）
+    from skills import get_schemas as get_skill_schemas
+
+    tools = list(BASE_TOOLS) + get_skill_schemas()
     if mcp is not None:
         tools += mcp.get_schemas()
 

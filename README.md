@@ -94,6 +94,33 @@ python -m venv .venv
 
 安全机制：工具执行全部**白名单化**（`config.yaml` 的 apps / commands），`high` 级操作执行前**弹窗确认**（`confirm.py`，Phase 2 语音闭环后升级为 TTS 语音确认）。
 
+### 技能系统（Skills · 快速扩展 Agent 能力）
+
+给 Agent 加技能 = 在 `hub/skills/` 下**新建一个 .py 文件**，定义两个函数，保存即注册（无需改 agent.py）：
+
+```python
+def skill_meta() -> dict:
+    """技能元数据（自动转成 M3 工具定义）"""
+    return {
+        "name": "技能名",
+        "description": "做什么、何时用",
+        "parameters": {"type": "object", "properties": {...}, "required": [...]},
+        "danger": "medium",   # low / medium / high（决定是否弹确认）
+    }
+
+def run(args: dict) -> str:
+    """技能执行体：返回结果文本"""
+    ...
+```
+
+当前技能：
+
+| 技能 | 功能 | 危险级 |
+|------|------|:---:|
+| `send_workbuddy` | 打开 WorkBuddy（未运行则启动）并发送消息 | 高（确认后发） |
+
+示例：`你好，小萌` → 计划 → `send_workbuddy({"message": "..."})` → WorkBuddy 收到消息 ✅
+
 ### MCP 扩展（动态工具）
 
 Agent 支持通过 [MCP 协议](https://modelcontextprotocol.io) 动态挂载外部工具，无需改代码：
@@ -148,6 +175,7 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 │   ├── confirm.py           # 危险操作安全确认（✅）
 │   ├── mcp_tools.py         # MCP 动态工具加载层（✅）
 │   ├── test_mcp_server.py   # MCP 演示服务器（get_time/list_dir）
+│   ├── skills/              # 技能系统：send_workbuddy 等（✅ 即插即用）
 │   ├── tools/               # 工具包：launch_app / type_to_app / shell / scheduler（✅）
 │   ├── test_minimax.py      # MiniMax 联通测试（✅）
 │   ├── test_tools.py        # 工具与 Agent 链路测试（✅）
