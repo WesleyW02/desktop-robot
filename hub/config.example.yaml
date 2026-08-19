@@ -1,0 +1,42 @@
+# =====================================================
+# 桌面机器人 Agent Hub 配置模板
+# 用法：复制本文件为项目根目录 config.yaml，按需修改。
+# 说明：config.yaml 已被 .gitignore 排除，不会上传 GitHub。
+# 敏感信息（API Key）建议填 config.yaml 或环境变量，不硬编码进代码。
+# =====================================================
+
+# ---- MiniMax（Token Plan）----
+minimax:
+  # API Key 两种填法（二选一）：
+  #   A. 填在下方 api_key 字段（推荐，随 config.yaml 本地保存）
+  #   B. 环境变量：set MINIMAX_API_KEY=sk-xxx（api_key 留空）
+  api_key: ""                       # ← 填你的 Key，如 "sk-xxxx"
+  api_key_env: MINIMAX_API_KEY
+  base_url: https://api.minimaxi.com/v1
+  model_chat: MiniMax-M3        # 对话+工具调用（按平台实际模型名调整）
+  model_tts: speech-2.8-hd      # 语音合成
+  model_asr: minimax-asr-01     # 语音转写
+  tts_voice: female-shaonv      # 音色（可选：male-qn-qingse 等）
+
+# ---- 串口（Phase 1 起使用，板子到手后填）----
+serial:
+  port: COM3                    # Windows 设备管理器查看实际 COM 口
+  baudrate: 921600
+
+# ---- 应用白名单（Phase 3 起使用，voice 工具只能操作这里登记的应用）----
+apps:
+  workbuddy:
+    name: WorkBuddy
+    path: C:\path\to\WorkBuddy.exe   # ← 填实际路径
+    window_title: WorkBuddy           # 窗口标题关键词（type_to_app 用）
+  notepad:
+    name: 记事本
+    path: notepad.exe
+    window_title: 记事本
+
+# ---- 命令白名单（Phase 3 起使用，shell 工具只能执行这里的命令前缀）----
+commands:
+  - git status
+  - git log
+  - dir
+  - tasklist

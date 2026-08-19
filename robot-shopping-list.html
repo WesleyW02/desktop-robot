@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桌面机器人完整物料清单 v2.0 · 可移动+敲击定位+双外观</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f7f7f8; color: #1f2328; line-height: 1.6; padding: 24px 16px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  h1 { font-size: 22px; font-weight: 600; }
+  .sub { color: #57606a; font-size: 13px; }
+  .totals { display: flex; gap: 10px; flex-wrap: wrap; }
+  .total-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 14px; font-size: 13px; }
+  .total-box b { font-size: 16px; }
+  .total-box.selected { background: #e8f4ff; border-color: #58a6ff; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .s-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; }
+  .s-card p { font-size: 12px; color: #57606a; margin-bottom: 2px; }
+  .s-card b { font-size: 16px; }
+  section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  section h2 { font-size: 16px; margin-bottom: 4px; }
+  section .sec-sub { font-size: 12px; color: #57606a; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: #57606a; border-bottom: 1px solid #e5e7eb; padding: 6px 6px; font-size: 12px; }
+  td { padding: 7px 6px; border-bottom: 1px solid #f0f1f3; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr.checked td { opacity: 0.45; }
+  td.chk { width: 28px; }
+  input[type=checkbox] { width: 16px; height: 16px; accent-color: #2d8cf0; cursor: pointer; }
+  td.price, td.amount, td.num { white-space: nowrap; }
+  .amount { font-weight: 500; }
+  .kw { color: #2d8cf0; font-size: 12px; }
+  .note { color: #57606a; font-size: 12px; }
+  .note b { color: #d4342c; }
+  .tag { display: inline-block; background: #e8f4ff; color: #1f6feb; font-size: 11px; padding: 0 6px; border-radius: 4px; margin-left: 6px; }
+  .tag.warn { background: #fff0f0; color: #d4342c; }
+  .tag.green { background: #e6ffed; color: #1a7f37; }
+  .tag.pick { background: #fbeaf0; color: #d4537e; }
+  footer { text-align: center; color: #888; font-size: 12px; margin-top: 16px; }
+  @media print { body { background: #fff; padding: 0; } section { border-color: #ccc; } .totals { display: none; } .summary { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>桌面机器人完整物料清单 v2.0</h1>
+      <div class="sub">可移动 + 敲击定位 + 双耳语音 + WiFi 可升级 · 两种外观配色可选</div>
+    </div>
+    <div class="totals">
+      <div class="total-box">全选参考价 <b>¥367</b></div>
+      <div class="total-box selected">已选 <b id="sum">¥0</b></div>
+    </div>
+  </header>
+
+  <div class="summary">
+    <div class="s-card"><p>① 核心语音</p><b>¥144</b></div>
+    <div class="s-card"><p>② 移动底盘</p><b>¥58</b></div>
+    <div class="s-card"><p>③ 电源系统</p><b>¥28</b></div>
+    <div class="s-card"><p>④ 外壳外观</p><b>¥60</b></div>
+    <div class="s-card"><p>⑤ 固定连接</p><b>¥22</b></div>
+    <div class="s-card"><p>⑥ 工具 / ⑦ WiFi</p><b>¥40 / ¥15</b></div>
+    <div class="s-card"><p>精简必购</p><b>≈¥291</b></div>
+  </div>
+
+  <section>
+    <h2>① 核心语音 <span class="tag green">必购</span></h2>
+    <div class="sec-sub">语音交互（VAD 免按键）+ 双耳定位 + 表情显示</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="35" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td><b>主控</b></td><td>ESP32-S3-DevKitC-1 <b>N16R8</b></td><td class="num">1</td><td class="price">35</td><td class="amount">¥35</td>
+        <td class="kw">ESP32-S3-DevKitC-1 N16R8</td>
+        <td class="note"><b>必须 N16R8</b>（16M Flash + 8M PSRAM），自带 WiFi</td>
+      </tr>
+      <tr data-price="12" data-qty="2">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>麦克风</td><td>INMP441（I2S MEMS）×2</td><td class="num">2</td><td class="price">12</td><td class="amount">¥24</td>
+        <td class="kw">INMP441 I2S 麦克风模块</td>
+        <td class="note">双耳测向阵列 + 语音采集</td>
+      </tr>
+      <tr data-price="10" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>功放</td><td>MAX98357A（I2S 数字功放）</td><td class="num">1</td><td class="price">10</td><td class="amount">¥10</td>
+        <td class="kw">MAX98357A I2S 功放模块</td>
+        <td class="note">直推喇叭</td>
+      </tr>
+      <tr data-price="5" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>喇叭</td><td>40mm 4Ω 3W 全频（或 36mm 8Ω 2W）</td><td class="num">1</td><td class="price">5</td><td class="amount">¥5</td>
+        <td class="kw">40mm 全频喇叭 4欧 3W</td>
+        <td class="note">全频纸盆人声清晰；别买压电/蜂鸣器/耳机喇叭</td>
+      </tr>
+      <tr data-price="18" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>屏幕</td><td>1.3寸 IPS ST7789 240×240 SPI</td><td class="num">1</td><td class="price">18</td><td class="amount">¥18</td>
+        <td class="kw">1.3寸 IPS ST7789 240x240</td>
+        <td class="note">大眼睛表情 + 文字</td>
+      </tr>
+      <tr data-price="12" data-qty="2">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>舵机</td><td>SG90 / MG90S（建议金属齿）×2</td><td class="num">2</td><td class="price">12</td><td class="amount">¥24</td>
+        <td class="kw">SG90 舵机</td>
+        <td class="note">摇头 + 点头双舵机；<b>180° 标准版（勿买 360° 连续版）</b>；代码软限位</td>
+      </tr>
+      <tr data-price="4" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>云台支架</td><td>SG90/MG90S 双轴云台支架</td><td class="num">1</td><td class="price">4</td><td class="amount">¥4</td>
+        <td class="kw">SG90 双轴云台支架</td>
+        <td class="note">颈部固定摇头+点头双舵机</td>
+      </tr>
+      <tr data-price="0" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>面包板</td><td>手头 400 孔（8.5×5.5cm）</td><td class="num">1</td><td class="price">0</td><td class="amount">¥0</td>
+        <td class="kw">（已有，无需购买）</td>
+        <td class="note">挤了再升级 830 孔；电源走并联省线</td>
+      </tr>
+      <tr data-price="8" data-qty="2">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>杜邦线</td><td>母对公 40pin 20cm</td><td class="num">2套</td><td class="price">8</td><td class="amount">¥16</td>
+        <td class="kw">杜邦线 母对公 20cm</td>
+        <td class="note">公母、母母各一套更灵活</td>
+      </tr>
+      <tr data-price="8" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>数据线</td><td>USB-C 数据线 1.5m</td><td class="num">1</td><td class="price">8</td><td class="amount">¥8</td>
+        <td class="kw">USB-C 数据线 传输</td>
+        <td class="note"><b>必须支持数据传输</b></td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>② 移动底盘 <span class="tag green">必购</span></h2>
+    <div class="sec-sub">差速驱动 + 防跌落</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="30" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td><b>驱动马达</b></td><td>TT 马达带编码器 + 65mm 轮 + 端子线 ×2</td><td class="num">2</td><td class="price">30</td><td class="amount">¥30</td>
+        <td class="kw">TT马达 带编码器 带轮 带线</td>
+        <td class="note"><b>必须带编码器</b>（走直线）+ 带轮 + 带线；套装最省事</td>
+      </tr>
+      <tr data-price="8" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>电机驱动</td><td>TB6612FNG（红色标准版）</td><td class="num">1</td><td class="price">8</td><td class="amount">¥8</td>
+        <td class="kw">TB6612 电机驱动模块</td>
+        <td class="note">双通道 1.2A，比 L9110S 稳；VM接5V、VCC接3V3、STBY拉高</td>
+      </tr>
+      <tr data-price="2" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>万向轮</td><td>钢珠万向轮</td><td class="num">1</td><td class="price">2</td><td class="amount">¥2</td>
+        <td class="kw">万向轮 钢珠</td>
+        <td class="note">后部转向支点</td>
+      </tr>
+      <tr data-price="6" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>防跌落</td><td>TCRT5000 红外模块 ×2</td><td class="num">2</td><td class="price">6</td><td class="amount">¥6</td>
+        <td class="kw">TCRT5000 循迹模块</td>
+        <td class="note">朝下装前缘，<b>防摔必备</b></td>
+      </tr>
+      <tr data-price="12" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>底盘板</td><td>3mm 亚克力 10×15cm（或木板）</td><td class="num">1</td><td class="price">12</td><td class="amount">¥12</td>
+        <td class="kw">3mm 亚克力板</td>
+        <td class="note">装电机/电池/主控</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>③ 电源系统 <span class="tag green">必购</span></h2>
+    <div class="sec-sub">内置固定电池，Type-C 充电；无开关，Deep Sleep 深睡待机 + 声音唤醒</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="15" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td><b>电池</b></td><td>18650 锂电池 3000mAh（带保护板）</td><td class="num">1</td><td class="price">15</td><td class="amount">¥15</td>
+        <td class="kw">18650 锂电池 3000mAh 带保护</td>
+        <td class="note">焊线 + 热缩管 + 胶固定底盘，不可拆卸；<b>买带保护板版</b>（或确认一体板带电池保护）；别买拆机裸电芯</td>
+      </tr>
+      <tr data-price="10" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>充放电一体模块</td><td>锂电池充放电一体板（Type-C 充电 + 5V 升压输出，带保护）</td><td class="num">1</td><td class="price">10</td><td class="amount">¥10</td>
+        <td class="kw">锂电池充放电一体板 5V升压 Type-C</td>
+        <td class="note">替代 TP4056+升压两个模块；<b>认准 5V 升压输出</b>（别买只充电不升压的）</td>
+      </tr>
+      <tr data-price="3" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>唤醒模块</td><td>声音检测模块（LM393，数字输出）</td><td class="num">1</td><td class="price">3</td><td class="amount">¥3</td>
+        <td class="kw">声音检测模块 LM393</td>
+        <td class="note">替代开关：ESP32 深睡待机，人说话/敲桌即 GPIO 唤醒，超时自动回睡</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>④ 外壳外观 <span class="tag green">已锁定：萌系</span></h2>
+    <div class="sec-sub">萌系造型已定稿：圆润胶囊体，白色 + 薄荷绿，大眼睛屏幕</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="40" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td><b>3D 打印外壳</b></td><td>白色 PLA + 薄荷绿 PLA（各 250g）<br>方案B 代打（约 50 元）</td><td class="num">1套</td><td class="price">40</td><td class="amount">¥40</td>
+        <td class="kw">PLA 耗材 1.75mm 白色 / 薄荷绿</td>
+        <td class="note">头部/身体/底盘三件；萌系白+薄荷绿</td>
+      </tr>
+      <tr data-price="10" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>透明窗</td><td>1.5mm 亚克力/PC 透明片</td><td class="num">1</td><td class="price">10</td><td class="amount">¥10</td>
+        <td class="kw">1.5mm 透明亚克力板</td>
+        <td class="note">保护屏幕（萌系也建议加）</td>
+      </tr>
+      <tr data-price="5" data-qty="1">
+        <td class="chk"><input type="checkbox"></td>
+        <td>LED 灯环</td><td>WS2812 环形（12-16 灯）</td><td class="num">1</td><td class="price">5</td><td class="amount">¥5</td>
+        <td class="kw">WS2812 灯环</td>
+        <td class="note">暖白/薄荷色氛围灯（可选）</td>
+      </tr>
+      <tr data-price="5" data-qty="1">
+        <td class="chk"><input type="checkbox"></td>
+        <td>装饰件</td><td>贴纸 / 自喷漆（可选）</td><td class="num">1</td><td class="price">5</td><td class="amount">¥5</td>
+        <td class="kw">自喷漆 白 / 黑色哑光</td>
+        <td class="note">白色 PLA 免喷漆，可省</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ 固定与连接 <span class="tag green">必购</span></h2>
+    <div class="sec-sub">免焊接装机所需</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="12" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>固定件</td><td>M2/M3 铜柱 + 螺丝 + 扎带套装</td><td class="num">1套</td><td class="price">12</td><td class="amount">¥12</td>
+        <td class="kw">铜柱 螺丝套装 M2 M3 / 扎带</td>
+        <td class="note">固定各模块与外壳</td>
+      </tr>
+      <tr data-price="10" data-qty="1">
+        <td class="chk"><input type="checkbox" checked></td>
+        <td>热熔胶枪</td><td>小号 + 胶棒</td><td class="num">1</td><td class="price">10</td><td class="amount">¥10</td>
+        <td class="kw">热熔胶枪 小号</td>
+        <td class="note">应急固定、走线</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 工具 <span class="tag warn">可选</span></h2>
+    <div class="sec-sub">先纸盒跑通可后置</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="25" data-qty="1">
+        <td class="chk"><input type="checkbox"></td>
+        <td>电烙铁套装</td><td>恒温电烙铁 + 锡丝</td><td class="num">1</td><td class="price">25</td><td class="amount">¥25</td>
+        <td class="kw">恒温电烙铁套装</td>
+        <td class="note">后期焊板用</td>
+      </tr>
+      <tr data-price="15" data-qty="1">
+        <td class="chk"><input type="checkbox"></td>
+        <td>万用表</td><td>数字万用表</td><td class="num">1</td><td class="price">15</td><td class="amount">¥15</td>
+        <td class="kw">数字万用表</td>
+        <td class="note">排查接线（可选）</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ WiFi 升级预留 <span class="tag warn">后续再买</span></h2>
+    <div class="sec-sub">无线模式时才需要；电源已由移动模块解决</div>
+    <table>
+      <tr><th class="chk"></th><th>组件</th><th>推荐型号 / 规格</th><th class="num">数量</th><th class="price">参考价</th><th class="amount">小计</th><th>淘宝搜索关键词</th><th>备注</th></tr>
+      <tr data-price="15" data-qty="1">
+        <td class="chk"><input type="checkbox"></td>
+        <td>外置天线版</td><td>ESP32-S3-WROOM-1 N16R8 + 天线座</td><td class="num">1</td><td class="price">15</td><td class="amount">+¥15</td>
+        <td class="kw">ESP32-S3-WROOM-1 N16R8 模组</td>
+        <td class="note">仅金属外壳需要；塑料外壳板载天线够用</td>
+      </tr>
+    </table>
+  </section>
+
+  <div class="sub" style="margin-top:-6px">参考价按 2026 年行情估算。必购合计（①+②+③+④方案A+⑤+⑦）约 ¥317；全选含工具/灯环/装饰约 ¥367。主控、屏幕、马达优先选带评价店铺。所有模块选【焊好排针】版（约 +1~3 元），杜邦线直插免焊接；TT 马达买"带编码器+带轮+带线"套装。</div>
+  <footer>ESP32-S3 桌面机器人 · 完整物料清单 v2.0（可移动 · 双耳定位 · 双外观）</footer>
+</div>
+
+<script>
+  var rows = document.querySelectorAll('tr[data-price]');
+  function calc() {
+    var sum = 0;
+    rows.forEach(function (r) {
+      var cb = r.querySelector('input[type=checkbox]');
+      if (cb.checked) {
+        sum += parseInt(r.dataset.price) * parseInt(r.dataset.qty || 1);
+        r.classList.add('checked');
+      } else {
+        r.classList.remove('checked');
+      }
+    });
+    document.getElementById('sum').textContent = '¥' + sum;
+  }
+  rows.forEach(function (r) {
+    r.querySelector('input[type=checkbox]').addEventListener('change', calc);
+  });
+  calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# =====================================================
+# Git 忽略规则 · 桌面机器人
+# 目的：确保敏感配置 / 本地环境 / 构建产物不会上传 GitHub
+# =====================================================
+
+# ---- 敏感配置（含 API Key，绝对禁止上传）----
+config.yaml
+.env
+.env.*
+*.local
+
+# ---- AI 工作台元数据（记忆/会话数据，不随项目上传）----
+.workbuddy/
+
+# ---- Python 运行环境 ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# ---- 测试 / 运行产物 ----
+test_tts.wav
+*.log
+
+# ---- 本地 ASR 模型（体积大，不入库；用脚本从 hf-mirror 下载）----
+hub/models/
+
+# ---- 固件构建产物（Arduino）----
+firmware/build/
+*.ino.bin
+*.ino.elf
+
+# ---- IDE / 编辑器 ----
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db
