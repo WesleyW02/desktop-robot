@@ -5,7 +5,12 @@
 流程：激活目标应用窗口（pygetwindow）→ 剪贴板粘贴文本（支持中文）→ 可选回车。
 窗口标题关键词在 config.yaml 的 apps.<key>.window_title 配置。
 """
+import os
+import sys
 import time
+
+# 兼容直接运行（python tools/type_to_app.py）：把 hub/ 加入搜索路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pyautogui
 import pygetwindow as gw

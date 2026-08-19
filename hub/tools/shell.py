@@ -6,7 +6,12 @@
 默认只建议放只读命令（git status / git log / dir / tasklist 等），
 写操作命令（del / rm / git push 等）应加入白名单前慎重评估。
 """
+import os
 import subprocess
+import sys
+
+# 兼容直接运行（python tools/shell.py）：把 hub/ 加入搜索路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from settings import get
 

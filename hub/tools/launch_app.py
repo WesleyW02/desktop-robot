@@ -13,6 +13,10 @@
 """
 import os
 import subprocess
+import sys
+
+# 兼容直接运行（python tools/launch_app.py）：把 hub/ 加入搜索路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from settings import get
 
