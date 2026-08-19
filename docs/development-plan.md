@@ -151,6 +151,8 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 - [x] `tools/shell`：白名单命令执行（前缀匹配，只读为主）
 - [x] `confirm.py`：危险操作分级确认（low/medium/high，high 弹确认）
 - [x] `test_tools.py`：5 项测试全通过（含真实 M3 工具调用循环）
+- [x] **MCP 扩展**：`mcp_tools.py` 动态加载层 + `test_mcp_server.py` 演示服务器，
+  M3 实测自主调用 `mcp_test_server_get_time` 成功（config.yaml → mcp.servers 即插即用）
 - **验收**：文本输入"列出当前目录文件" → M3 自动调 shell(dir) → 回填汇报 ✅；
   语音版（Phase 2 语音闭环后）：说"打开 WorkBuddy 发消息"全流程自动完成
 

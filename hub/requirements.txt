@@ -10,6 +10,9 @@ requests>=2.31.0
 # ---- 本地 ASR（Token Plan 无云端转写，用 faster-whisper 本地识别）----
 faster-whisper>=1.0.0
 
+# ---- MCP 工具协议（动态加载外部工具）----
+mcp>=1.0.0
+
 # ---- 串口通信（Phase 1 起使用）----
 pyserial>=3.5
 

@@ -74,8 +74,32 @@ python -m venv .venv
 | `type_to_app` | 激活窗口 + 中文输入（剪贴板粘贴） | 高 |
 | `shell` | 白名单命令执行（前缀匹配，只读为主） | 高 |
 | `scheduler` | 定时提醒 | 低 |
+| `mcp_*`（动态） | MCP 服务器暴露的工具（如 `mcp_test_server_get_time`） | 中 |
 
 安全机制：工具执行全部**白名单化**（`config.yaml` 的 apps / commands），`high` 级操作执行前**弹窗确认**（`confirm.py`，Phase 2 语音闭环后升级为 TTS 语音确认）。
+
+### MCP 扩展（动态工具）
+
+Agent 支持通过 [MCP 协议](https://modelcontextprotocol.io) 动态挂载外部工具，无需改代码：
+
+```yaml
+# config.yaml → mcp.servers，工具自动注册为 mcp_<服务器名>_<工具名>
+mcp:
+  servers:
+    test_server:                          # 演示（hub/test_mcp_server.py）
+      command: python
+      args: ["-u", "hub/test_mcp_server.py"]
+    # filesystem:
+    #   command: npx
+    #   args: ["-y", "@modelcontextprotocol/server-filesystem", "D:/"]
+    # github:
+    #   url: "http://localhost:8080/mcp"
+```
+
+- 本地 stdio 服务器（`command`+`args`）或远程 SSE/HTTP 服务器（`url`）均支持
+- 连接后工具自动出现在 M3 的工具列表，与内置工具同等可用（同样过安全确认）
+- 自带 `hub/test_mcp_server.py` 演示服务器（get_time / list_dir），用于验证链路
+- 实现：`hub/mcp_tools.py`（McpManager 动态加载层）
 
 ### 本地 ASR（语音转写）
 
@@ -106,6 +130,8 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 │   ├── asr.py               # 本地 faster-whisper 转写（✅）
 │   ├── settings.py          # 配置加载器（✅）
 │   ├── confirm.py           # 危险操作安全确认（✅）
+│   ├── mcp_tools.py         # MCP 动态工具加载层（✅）
+│   ├── test_mcp_server.py   # MCP 演示服务器（get_time/list_dir）
 │   ├── tools/               # 工具包：launch_app / type_to_app / shell / scheduler（✅）
 │   ├── test_minimax.py      # MiniMax 联通测试（✅）
 │   ├── test_tools.py        # 工具与 Agent 链路测试（✅）

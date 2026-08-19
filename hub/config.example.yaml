@@ -53,3 +53,18 @@ commands:
   - git log
   - dir
   - tasklist
+
+# ---- MCP 服务器（Phase 3 扩展，Agent 动态加载的外部工具）----
+# stdio 型：command + args 启动本地进程；或 url 连远程 SSE/HTTP 服务器
+# 工具自动注册为 mcp_<服务器名>_<工具名>，与内置工具同等可用
+mcp:
+  servers:
+    test_server:                          # 演示服务器（hub/test_mcp_server.py）
+      command: python
+      args: ["-u", "hub/test_mcp_server.py"]
+    # 真实服务器示例（装好对应工具后取消注释）：
+    # filesystem:
+    #   command: npx
+    #   args: ["-y", "@modelcontextprotocol/server-filesystem", "D:/"]
+    # github:
+    #   url: "http://localhost:8080/mcp"
