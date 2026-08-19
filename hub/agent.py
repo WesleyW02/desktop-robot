@@ -22,6 +22,7 @@ Agent 核心：ReAct 框架（Phase 3 v2）
 安全：所有工具执行前按危险级别确认（见 confirm.py 与 tools.DANGER）。
 """
 import json
+from pathlib import Path
 from typing import List, Optional
 
 from confirm import confirm_if
@@ -39,7 +40,9 @@ SYSTEM_PROMPT = (
     "2. 工具执行结果以「工具: 结果」形式返回给你，你需要据此向用户汇报；"
     "3. 若工具结果以「错误」开头，如实告知用户原因；"
     "4. 仅使用提供的工具，不要编造其他工具；"
-    "5. 回答控制在 2-3 句话以内，语气亲切可爱，偶尔加拟声词。"
+    "5. 回答控制在 2-3 句话以内，语气亲切可爱，偶尔加拟声词；"
+    "6. 若任务需要多个工具步骤（如先打开应用再输入内容），在第一次回复时一次性列出所有需要的工具调用；"
+    "7. 单个工具即可完成的任务，直接调用该工具即可。"
 )
 
 # 规划阶段提示词：要求 M3 先产出结构化计划（只允许调用 submit_plan）
@@ -59,6 +62,12 @@ EXEC_PROMPT = (
     "2. 观察工具返回结果，判断该步是否成功，失败则尝试合理修正或如实说明；"
     "3. 计划全部完成后，直接输出最终答复（不要调用工具）。"
     "4. 不要重复提交计划，不要执行与计划无关的操作。"
+)
+
+# 快路径提示词（单步任务不规划，直接执行）
+FAST_PROMPT = (
+    "请逐步推进：每步先思考（用 <think>）再调用工具，观察工具结果后继续，"
+    "任务完成后直接输出最终答复（不要调用工具）。"
 )
 
 MAX_TOOL_ITER = 8  # 单轮对话最大工具调用轮次（执行阶段）
@@ -182,29 +191,117 @@ def _planner(mm: MiniMaxClient, working: list, tools: list) -> Optional[list]:
     return None
 
 
+def _available_tool_names(tools: list) -> set:
+    """收集全部可用工具名（计划校验用）。"""
+    return {s["function"]["name"] for s in tools}
+
+
+def _validate_plan(steps: list, valid_names: set) -> list:
+    """计划校验：把计划中不存在的工具名就地修正（置空并加提示），
+    执行阶段由 M3 依据真实工具表自行选用。"""
+    for s in steps:
+        if isinstance(s, dict) and s.get("tool") and s["tool"] not in valid_names:
+            bad = s["tool"]
+            s["tool"] = None
+            s["_note"] = f"（计划中的工具 {bad} 不可用，执行时请选用实际可用工具）"
+    return steps
+
+
 def _format_plan(steps: list) -> str:
     """把计划步骤列表格式化为可读文本（注入执行上下文用）。"""
     lines = []
     for i, s in enumerate(steps, 1):
         task = s.get("task", "") if isinstance(s, dict) else str(s)
         tool = s.get("tool") if isinstance(s, dict) else None
-        lines.append(f"{i}. {task}" + (f"（工具：{tool}）" if tool else ""))
+        note = s.get("_note", "") if isinstance(s, dict) else ""
+        lines.append(f"{i}. {task}" + (f"（工具：{tool}）" if tool else "") + (f" {note}" if note else ""))
     return "\n".join(lines)
 
 
-def _executor(mm: MiniMaxClient, working: list, tools: list,
-              plan_text: str, max_iter: int,
-              mcp: Optional[McpManager] = None) -> str:
-    """执行阶段（ReAct）：注入计划 → 每步 思考/行动/观察 → 直到 M3 直接答复。
+# ---------------- 上下文裁剪 ----------------
+MAX_CONTEXT_MSGS = 12    # 保留消息条数（含 system）
+MAX_CONTEXT_CHARS = 8000  # 保留总字符上限
 
-    返回最终文本。working 为本轮会话副本，不污染主对话历史。
+
+def trim_context(messages: list,
+                 max_msgs: int = MAX_CONTEXT_MSGS,
+                 max_chars: int = MAX_CONTEXT_CHARS) -> None:
+    """对话历史裁剪：超长/超多时保留 system + 最近若干条。"""
+    if len(messages) <= 1:
+        return
+    total = sum(len(str(m.get("content", ""))) for m in messages)
+    if len(messages) <= max_msgs and total <= max_chars:
+        return
+    sys_msg = messages[0]
+    tail = messages[-(max_msgs - 1):]
+    dropped = len(messages) - len(tail) - 1
+    if dropped > 0:
+        messages[:] = [sys_msg] + tail
+        print(f"  [上下文] 已裁剪 {dropped} 条旧消息（保留最近 {len(tail)} 条）")
+
+
+def run_agent(mm: MiniMaxClient, messages: list,
+              mcp: Optional[McpManager] = None,
+              max_iter: int = MAX_TOOL_ITER) -> str:
+    """ReAct 主入口：分流（对话 / 行动）→ 行动则【单步快路径】或【规划 + 执行】。
+
+    messages: 跨轮次对话历史（调用方持有，函数内只读不污染）。
     """
-    working.append(mm.user_msg(f"{EXEC_PROMPT}\n\n执行计划：\n{plan_text}"))
+    # 完整工具表 = 内置 + 技能 + MCP 动态工具（不含协议工具 submit_plan）
+    from skills import get_schemas as get_skill_schemas
+
+    tools = list(BASE_TOOLS) + get_skill_schemas()
+    if mcp is not None:
+        tools += mcp.get_schemas()
+    valid_names = _available_tool_names(tools)
+
+    # 上下文裁剪（防无限膨胀）
+    trim_context(messages)
+
+    # ---------- ① 分流轮：直接对话 还是 需要行动 ----------
+    msg, tool_calls = _chat_once(mm, messages, tools)
+    if not tool_calls:
+        # 纯对话：直接回复，不规划
+        return (msg.content or "").strip()
+
+    working = list(messages)
+
+    # ---------- ② 快路径：单步任务跳过规划，直接 ReAct 执行 ----------
+    if len(tool_calls) == 1:
+        print("  ⚡ 单步任务快路径（跳过规划，直接执行）")
+        return _executor(mm, working, tools, plan_text=None, max_iter=max_iter, mcp=mcp)
+
+    # ---------- ③ 多步任务：先规划 ----------
+    steps = _planner(mm, working, tools)
+    if not steps:
+        # 规划失败 → 降级为直接 ReAct 执行
+        return _executor(mm, working, tools, plan_text=None, max_iter=max_iter, mcp=mcp)
+
+    steps = _validate_plan(steps, valid_names)
+    plan_text = _format_plan(steps)
+    print(f"\n📋 执行计划：\n{plan_text}")
+
+    # ---------- ④ 执行阶段（ReAct） ----------
+    return _executor(mm, working, tools, plan_text, max_iter=max_iter, mcp=mcp)
+
+
+def _executor(mm: MiniMaxClient, working: list, tools: list,
+              plan_text: Optional[str], max_iter: int,
+              mcp: Optional[McpManager] = None) -> str:
+    """执行阶段（ReAct）：注入计划（可选）→ 每步 思考/行动/观察 → 直到 M3 直接答复。
+
+    plan_text: 非空 = 规划模式（按计划执行）；None = 快路径（无计划直接执行）。
+    working 为本轮会话副本，不污染主对话历史。
+    """
+    if plan_text:
+        working.append(mm.user_msg(f"{EXEC_PROMPT}\n\n执行计划：\n{plan_text}"))
+    else:
+        working.append(mm.user_msg(FAST_PROMPT))
 
     for _ in range(max_iter):
         msg, tool_calls = _chat_once(mm, working, tools)
 
-        # M3 不再调用工具 → 计划完成，输出最终答复
+        # M3 不再调用工具 → 任务完成，输出最终答复
         if not tool_calls:
             return (msg.content or "").strip()
 
@@ -221,42 +318,32 @@ def _executor(mm: MiniMaxClient, working: list, tools: list,
             print(f"  👀 观察: {result[:300]}")
             working.append({"role": "tool", "tool_call_id": tc.id, "content": result})
 
-    return "（已达最大执行轮次，计划可能未全部完成）"
+    return "（已达最大执行轮次，任务可能未全部完成）"
 
 
-def run_agent(mm: MiniMaxClient, messages: list,
-              mcp: Optional[McpManager] = None,
-              max_iter: int = MAX_TOOL_ITER) -> str:
-    """ReAct 主入口：分流（对话 / 行动）→ 行动则规划 + 执行。
+# ---------------- 会话持久化 ----------------
+SESSION_FILE = Path(__file__).resolve().parent / "session.json"
 
-    messages: 跨轮次对话历史（调用方持有，函数内只读不污染）。
-    """
-    # 完整工具表 = 内置 + 技能 + MCP 动态工具（不含协议工具 submit_plan）
-    from skills import get_schemas as get_skill_schemas
 
-    tools = list(BASE_TOOLS) + get_skill_schemas()
-    if mcp is not None:
-        tools += mcp.get_schemas()
+def load_session() -> Optional[list]:
+    """加载上次对话历史；无有效历史返回 None。"""
+    try:
+        with open(SESSION_FILE, "r", encoding="utf-8") as f:
+            msgs = json.load(f)
+        if isinstance(msgs, list) and msgs:
+            return msgs
+    except (OSError, json.JSONDecodeError):
+        pass
+    return None
 
-    # ---------- ① 分流轮：直接对话 还是 需要行动 ----------
-    msg, tool_calls = _chat_once(mm, messages, tools)
-    if not tool_calls:
-        # 纯对话：直接回复，不规划
-        return (msg.content or "").strip()
 
-    # ---------- ② 行动模式：先规划 ----------
-    working = list(messages)
-    steps = _planner(mm, working, tools)
-    if not steps:
-        # 规划失败（M3 未按要求提交计划）→ 降级：直接 ReAct 执行，不注入计划
-        return _executor(mm, working, tools, plan_text="（未生成结构化计划，请自行合理行动）",
-                         max_iter=max_iter, mcp=mcp)
-
-    plan_text = _format_plan(steps)
-    print(f"\n📋 执行计划：\n{plan_text}")
-
-    # ---------- ③ 执行阶段（ReAct） ----------
-    return _executor(mm, working, tools, plan_text, max_iter=max_iter, mcp=mcp)
+def save_session(messages: list) -> None:
+    """保存对话历史（session.json，已 gitignore）。"""
+    try:
+        with open(SESSION_FILE, "w", encoding="utf-8") as f:
+            json.dump(messages, f, ensure_ascii=False, indent=1)
+    except OSError:
+        pass
 
 
 def main() -> int:
@@ -265,7 +352,11 @@ def main() -> int:
         return 1
 
     mm = MiniMaxClient()
-    messages = [mm.sys_msg(SYSTEM_PROMPT)]
+
+    # 恢复上次会话（如有）
+    messages = load_session() or [mm.sys_msg(SYSTEM_PROMPT)]
+    if len(messages) > 1:
+        print(f"  [会话] 已恢复上次对话（{len(messages) - 1} 条消息），输入 /new 清空")
 
     # 启动 MCP 服务器（后台连接，动态注册工具）
     mcp = McpManager()
@@ -278,9 +369,9 @@ def main() -> int:
         print("  [MCP] 未配置服务器（config.yaml → mcp.servers）")
 
     print("=" * 50)
-    print("  小萌 Agent 模式（ReAct · 先规划后执行 · 对话/行动分流）")
-    print("  试试：你好 / 打开记事本写一句话 / 列出当前目录文件 / 现在几点")
-    print("  退出：exit")
+    print("  小萌 Agent 模式（ReAct · 快路径/规划 · 会话记忆）")
+    print("  试试：你好 / 打开记事本 / 列出当前目录文件 / 现在几点 / 给WorkBuddy发消息")
+    print("  命令：/new 清空会话 · exit 退出")
     print("=" * 50)
 
     while True:
@@ -288,18 +379,26 @@ def main() -> int:
             user_input = input("\n你: ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\n再见 ~")
+            save_session(messages)
             break
         if not user_input:
             continue
         if user_input.lower() in ("exit", "quit", "退出"):
+            save_session(messages)
             print("小萌: 拜拜，记得想我哦~")
             break
+        if user_input in ("/new", "/reset"):
+            messages[:] = [mm.sys_msg(SYSTEM_PROMPT)]
+            save_session(messages)
+            print("  [会话] 已清空，开始新对话")
+            continue
 
         messages.append(mm.user_msg(user_input))
         try:
             reply = run_agent(mm, messages, mcp=mcp)
             print(f"\n小萌: {reply}")
             messages.append(mm.asst_msg(reply))
+            save_session(messages)
         except Exception as e:
             print(f"\n[错误] {e}")
 

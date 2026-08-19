@@ -26,6 +26,9 @@ build/
 test_tts.wav
 *.log
 
+# ---- 会话历史（运行时数据，不入库）----
+hub/session.json
+
 # ---- 本地 ASR 模型（体积大，不入库；用脚本从 hf-mirror 下载）----
 hub/models/
 
