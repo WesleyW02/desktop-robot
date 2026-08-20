@@ -4,19 +4,16 @@
 #include <Arduino.h>
 
 // =====================================================
-// 音频：INMP441 麦克风（I2S 采集 + VAD）+ MAX98357A 功放（播放）
+// 音频：INMP441 麦克风（I2S 采集 + VAD + 上行）+ MAX98357A 功放（播放）
 //
-// ⚠️ 骨架阶段：接口与状态机完整，I2S 驱动实现待硬件实测时
-//    按 ESP32 core 3.x 的 I2S API 填充（audio_init / audio_loop / audio_play_wav）。
+// 采集：I2S RX 32bit 槽（INMP441 24bit）→ 取高 16bit → int16 PCM
+// VAD ：能量检测，超 VAD_ENERGY_THRESHOLD 起录（vad start），
+//       静音超 VAD_END_SILENCE_MS 结束（vad end），期间按块上行 audio
+// 播放：base64 解码 → I2S TX 16bit → MAX98357A
 // =====================================================
 
-// 启动录音（开始 VAD 检测，触发后上行 audio 块）
-void audio_start_capture(void);
-// 停止录音（上行 vad end）
-void audio_stop_capture(void);
-// 录音/VAD 主循环（在 loop 调用）
-void audio_loop(void);
-// 播放 WAV（base64 解码 + I2S 输出）——骨架 TODO
-void audio_play_wav(const char* base64_data, size_t wav_len);
+void audio_init(void);           // I2S 双通道初始化
+void audio_loop(void);           // 采集 + VAD 状态机（loop 调用）
+void audio_play_wav(const char* base64_data, size_t wav_len); // 播放 WAV（阻塞）
 
 #endif // AUDIO_CTRL_H

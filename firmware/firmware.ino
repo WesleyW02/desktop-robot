@@ -29,7 +29,7 @@ void setup() {
   servo_init();
   motor_init();
   display_init();
-  // audio_init() 待 I2S 实现后启用（骨架阶段不初始化）
+  audio_init();
 
   // ---- 表情：开机开心脸 ----
   display_set_face("happy");

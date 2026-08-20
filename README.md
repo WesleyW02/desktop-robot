@@ -147,6 +147,18 @@ mcp:
 - 自带 `hub/test_mcp_server.py` 演示服务器（get_time / list_dir），用于验证链路
 - 实现：`hub/mcp_tools.py`（McpManager 动态加载层）
 
+### 语音闭环（Phase 2 · 免按键对话，本地可用）
+
+```bash
+# 电脑麦克风模式（不依赖硬件，说话即聊、静音自动结束）
+.venv/Scripts/python voice_loop.py mic
+# 串口模式（板子到货后，接机器人麦克风/喇叭）
+.venv/Scripts/python voice_loop.py serial --port COM3
+```
+
+链路：麦克风采集 → VAD（能量检测）→ 本地 ASR → **ReAct Agent** → TTS → 播放。
+固件侧已实现 I2S 采集（INMP441）+ VAD + base64 上行、I2S 播放（MAX98357A），编译通过待硬件实测。
+
 ### 本地 ASR（语音转写）
 
 MiniMax Token Plan 未提供 ASR 接口（实测 `/v1/asr`、`/audio/transcriptions` 均 404），语音转写改用**本地 faster-whisper**：
@@ -178,6 +190,7 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 │   ├── confirm.py           # 危险操作安全确认（✅）
 │   ├── mcp_tools.py         # MCP 动态工具加载层（✅）
 │   ├── serial_bridge.py     # 串口桥：协议 v2.0 收发 + ack 匹配 + CLI 测试（✅）
+│   ├── voice_loop.py        # 语音闭环：麦克风→ASR→Agent→TTS→播放（✅ 本地可用）
 │   ├── test_mcp_server.py   # MCP 演示服务器（get_time/list_dir）
 │   ├── skills/              # 技能系统：send_workbuddy 等（✅ 即插即用）
 │   ├── tools/               # 工具包：launch_app / type_to_app / shell / scheduler（✅）

@@ -48,7 +48,8 @@ CMD_DEFS = {
 class SerialBridge:
     """串口桥：协议 v2.0 收发 + seq 匹配回执。"""
 
-    def __init__(self, port: Optional[str] = None, baudrate: Optional[int] = None):
+    def __init__(self, port: Optional[str] = None, baudrate: Optional[int] = None,
+                 on_message=None):
         cfg = get("serial", {}) or {}
         self.port = port or cfg.get("port") or "COM3"
         self.baudrate = baudrate or cfg.get("baudrate") or 921600
@@ -59,6 +60,8 @@ class SerialBridge:
         self._ack_results: dict = {}   # seq -> ack dict
         self._rx_thread: Optional[threading.Thread] = None
         self._running = False
+        # 消息回调（voice_loop 等使用）：返回 True 表示已消费（不再打印）
+        self.on_message = on_message
 
     # ---------------- 连接管理 ----------------
     def open(self) -> "SerialBridge":
@@ -140,6 +143,13 @@ class SerialBridge:
         except json.JSONDecodeError:
             print(f"[rx][bad_json] {line[:80]}")
             return
+        # 业务回调优先（voice_loop 收音频流等）；返回 True 表示已消费
+        if self.on_message is not None:
+            try:
+                if self.on_message(msg):
+                    return
+            except Exception as e:
+                print(f"[rx][callback_err] {e}")
         t = msg.get("type")
         seq = msg.get("seq")
 

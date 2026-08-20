@@ -23,6 +23,6 @@ pygetwindow>=0.0.9
 # ---- 配置解析 ----
 pyyaml>=6.0
 
-# ---- 音频（可选：语音对话用，先用 winsound 兜底）----
-# sounddevice>=0.4.6
-# numpy>=1.24
+# ---- 音频（语音对话 voice_loop.py 用）----
+sounddevice>=0.4.6
+numpy>=1.24

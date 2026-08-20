@@ -91,6 +91,17 @@ void proto_send_knock(int angle) {
   send_line(doc);
 }
 
+// ---------------- 上行：音频块（base64）----------------
+void proto_send_audio(const char* b64, size_t raw_len, uint16_t pts) {
+  JsonDocument doc; // ArduinoJson v7：动态分配，大字符串自动扩容
+  doc["type"] = "audio";
+  doc["seq"] = _tx_seq = (_tx_seq + 1) & 0xFFFF;
+  doc["len"] = raw_len;
+  doc["pts"] = pts;
+  doc["data"] = b64;
+  send_line(doc);
+}
+
 // ---------------- 下行分发 ----------------
 static void handle_ping(JsonDocument& doc) {
   proto_send_pong(doc["seq"] | 0);

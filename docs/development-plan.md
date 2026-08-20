@@ -144,11 +144,13 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 - **验收**：电脑命令下发 `{"type":"face","expr":"happy"}`，机器人屏幕显示表情
 
 ### Phase 2：MiniMax 语音链路（1-2 天）
-- [ ] `minimax_client`：ASR / M3 / TTS 三接口封装 + 独立测试脚本（**不依赖硬件，先验证 Key**）
-- [ ] ESP32 `audio_in`：I2S 录音 + VAD（能量检测）+ 上传录音流
-- [ ] ESP32 `audio_out`：接收音频流播放
-- [ ] Hub `main`：VAD 事件 → ASR → M3 → TTS → 下发播放，完成语音闭环
-- **验收**：先键盘文本闭环（M3→TTS 出声），再语音闭环（说话→机器人回答）
+- [x] `minimax_client`：ASR / M3 / TTS 三接口封装（Token Plan 实测：TTS 走原生 t2a_v2、ASR 用本地 whisper）
+- [x] ESP32 `audio_in`：**I2S 录音 + VAD 状态机 + base64 音频块上行**（audio_ctrl.cpp 完整实现，编译通过，待硬件实测）
+- [x] ESP32 `audio_out`：接收 play 音频流 base64 解码 → I2S 播放
+- [x] Hub `voice_loop.py`：**语音闭环**（麦克风采集→VAD→本地 ASR→ReAct Agent→TTS→播放；serial 模式接 ESP32）
+- [x] 闭环链路验证：pcm→WAV ✅ / ASR ✅ / Agent+TTS ✅（三段全通，本地 mic 模式可直接用）
+- [ ] 板子到货：串口音频流联调（voice_loop.py serial 模式）
+- **验收**：先键盘文本闭环（M3→TTS 出声）✅，再语音闭环（说话→机器人回答，本地 mic 已可用）
 
 ### Phase 3：Agent 工具调用（1-2 天）——核心能力
 - [x] `agent.py`：**ReAct 框架 v2**——对话/行动分流；行动先规划（submit_plan 协议工具）
