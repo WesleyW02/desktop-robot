@@ -125,16 +125,17 @@ def run(args: dict) -> str:
 
 示例：`你好，小萌` → 计划 → `send_workbuddy({"message": "..."})` → WorkBuddy 收到消息 ✅
 
-### RAG 知识库（基于项目文档回答问题）
+### RAG 知识库（基于文档回答问题）
 
 ```yaml
-# config.yaml → rag.docs_dir（递归扫描 md/txt/yaml/py 等，自动分块+BM25 索引）
+# config.yaml → rag.docs_dir（递归扫描，支持 md/txt/yaml/py + PDF/Word）
 rag:
   docs_dir: "D:\\个人工作台\\桌面机器人"
 ```
 
 Agent 通过 `rag_search` 技能按需检索知识库。实现：`hub/rag.py`（分块 + jieba 分词 + BM25）。
-实测：问"硬件预算组合" → 检索方案书 → 准确回答 ¥302/¥327/¥367 ✅
+- **支持格式**：文本类（md/txt/yaml/py/json/ino/cpp/h/html）+ **PDF**（pypdf 逐页提取）+ **Word**（python-docx 段落+表格）
+- 实测：docx 解析 ✅ / PDF 解析 ✅（中文正常）/ 考公笔记库 41 分块检索命中 ✅
 
 ### MCP 扩展（动态工具）
 

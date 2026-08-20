@@ -62,9 +62,14 @@ mcp:
     test_server:                          # 演示服务器（hub/test_mcp_server.py）
       command: python
       args: ["-u", "hub/test_mcp_server.py"]
-    # 真实服务器示例（装好对应工具后取消注释）：
-    # filesystem:
-    #   command: npx
-    #   args: ["-y", "@modelcontextprotocol/server-filesystem", "D:/"]
+    filesystem:                           # 文件系统服务器（hub/mcp_filesystem.py，只读）
+      command: python
+      args: ["-u", "hub/mcp_filesystem.py"]
     # github:
     #   url: "http://localhost:8080/mcp"
+
+# ---- RAG 知识库（Agent 基于文档回答问题）----
+# 支持格式：md/txt/yaml/py/json/ino/cpp/h/html + pdf/docx（自动解析）
+rag:
+  docs_dir: "D:/个人工作台/桌面机器人"      # 文档根目录（递归扫描）
+  exts: [".md", ".txt", ".yaml", ".yml", ".py", ".json", ".ino", ".cpp", ".h", ".html", ".pdf", ".docx"]

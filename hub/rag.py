@@ -26,7 +26,7 @@ from settings import get
 logger = logging.getLogger("rag")
 
 # 默认扫描的扩展名
-DEFAULT_EXTS = (".md", ".txt", ".yaml", ".yml", ".py", ".json", ".ino", ".cpp", ".h", ".html")
+DEFAULT_EXTS = (".md", ".txt", ".yaml", ".yml", ".py", ".json", ".ino", ".cpp", ".h", ".html", ".pdf", ".docx")
 # 默认分块大小（字符）
 CHUNK_SIZE = 400
 # 默认 top_k
@@ -116,6 +116,53 @@ def _chunk_text(text: str, size: int = CHUNK_SIZE) -> List[str]:
     return chunks
 
 
+# =====================================================================
+# 文本提取（按扩展名分发：文本 / PDF / Word）
+# =====================================================================
+_TEXT_EXTS = {".md", ".txt", ".yaml", ".yml", ".py", ".json", ".ino", ".cpp", ".h", ".html"}
+
+
+def _extract_text(path: str, max_chars: int = 500000) -> str:
+    """按文件类型提取文本：纯文本直接读，PDF 逐页提取，docx 提取段落。"""
+    ext = os.path.splitext(path)[1].lower()
+
+    if ext in _TEXT_EXTS:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read(max_chars)
+
+    if ext == ".pdf":
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(path)
+            parts = []
+            for page in reader.pages:
+                parts.append(page.extract_text() or "")
+                if sum(len(p) for p in parts) > max_chars:
+                    break
+            return "\n".join(parts)[:max_chars]
+        except Exception as e:
+            logger.warning("[rag] PDF 解析失败 %s: %s", path, e)
+            return ""
+
+    if ext == ".docx":
+        try:
+            from docx import Document
+            doc = Document(path)
+            paras = [p.text for p in doc.paragraphs]
+            # 表格内容也提取
+            for table in doc.tables:
+                for row in table.rows:
+                    paras.append(" | ".join(cell.text for cell in row.cells))
+            text = "\n".join(p for p in paras if p.strip())
+            return text[:max_chars]
+        except Exception as e:
+            logger.warning("[rag] docx 解析失败 %s: %s", path, e)
+            return ""
+
+    # 其他类型（.doc 旧格式等）不支持
+    return ""
+
+
 class RagIndex:
     def __init__(self, docs_dir: Optional[str] = None, exts=DEFAULT_EXTS):
         cfg = get("rag", {}) or {}
@@ -133,10 +180,8 @@ class RagIndex:
             self.chunks = []
             files = self._scan_files()
             for path in files:
-                try:
-                    with open(path, "r", encoding="utf-8", errors="replace") as f:
-                        text = f.read(500000)
-                except OSError:
+                text = _extract_text(path)
+                if not text:
                     continue
                 rel = os.path.relpath(path, self.docs_dir)
                 for c in _chunk_text(text):
