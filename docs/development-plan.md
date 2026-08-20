@@ -139,7 +139,7 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 - [x] `display_ctrl`：ST7789 大眼睛表情（happy/sad/idle/sleep/surprise）+ 文字
 - [~] `audio_ctrl`：接口与 VAD 状态机骨架（I2S 驱动待硬件实测按 core 3.x API 填充）
 - [x] **编译通过**：FQBN `esp32:esp32:esp32s3:FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB`，376KB (11%)
-- [ ] Hub：`serial_bridge` 收发 + 命令行测试工具（发 face/text 指令）
+- [x] Hub：`serial_bridge.py` 串口桥（协议 v2.0 收发 + seq 匹配 ack + CLI：ping/face/text/servo/move/mode/locate/reboot/boot/monitor，已用 fake 串口验证）
 - [ ] 板子到货：烧录 + 串口联通测试
 - **验收**：电脑命令下发 `{"type":"face","expr":"happy"}`，机器人屏幕显示表情
 

@@ -177,6 +177,7 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 │   ├── settings.py          # 配置加载器（✅）
 │   ├── confirm.py           # 危险操作安全确认（✅）
 │   ├── mcp_tools.py         # MCP 动态工具加载层（✅）
+│   ├── serial_bridge.py     # 串口桥：协议 v2.0 收发 + ack 匹配 + CLI 测试（✅）
 │   ├── test_mcp_server.py   # MCP 演示服务器（get_time/list_dir）
 │   ├── skills/              # 技能系统：send_workbuddy 等（✅ 即插即用）
 │   ├── tools/               # 工具包：launch_app / type_to_app / shell / scheduler（✅）
