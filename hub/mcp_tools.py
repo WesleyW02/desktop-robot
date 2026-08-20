@@ -28,6 +28,7 @@ MCP 工具动态加载层（mcp_tools.py）
 import logging
 import re
 import threading
+import time
 from typing import Any, Dict, List, Optional
 
 import anyio
@@ -55,10 +56,9 @@ class McpManager:
             servers_cfg if servers_cfg is not None
             else (get("mcp", {}).get("servers", {}) or {})
         )
-        # portal 在独立后台线程维护 event loop，主线程可安全调用
-        # 注意：anyio 4.x 的 start_blocking_portal 是同步 context manager
-        self._portal_cm = anyio.from_thread.start_blocking_portal()
-        self._portal = self._portal_cm.__enter__()
+        # 每个服务器一个独立 portal（独立 event loop 线程），
+        # 避免多 stdio 服务器在单 portal 下并发握手冲突（Windows 实测）。
+        self._portals: Dict[str, Any] = {}  # server_name -> BlockingPortal
         self._tool_map: Dict[str, Dict] = {}  # mcp_工具名 -> {schema, server, tool, session}
         self._ready = threading.Event()
         self._lock = threading.Lock()
@@ -68,14 +68,19 @@ class McpManager:
         return bool(self.servers_cfg)
 
     def start(self) -> None:
-        """后台连接所有配置的服务器（非阻塞）。"""
+        """后台连接所有配置的服务器（非阻塞，每服务器独立线程+portal）。
+
+        各服务器错开启动（2s 间隔），规避 Windows 下多个 stdio 子进程
+        并发创建管道的冲突（实测并发握手会卡死第二个）。
+        """
         if not self.servers_cfg:
             return
-        for name, cfg in self.servers_cfg.items():
+        for idx, (name, cfg) in enumerate(self.servers_cfg.items()):
             threading.Thread(
                 target=self._connect_one, args=(name, cfg), daemon=True,
                 name=f"mcp-{name}",
             ).start()
+            time.sleep(2.0)  # 错开子进程启动
 
     def wait_ready(self, timeout: float = 8.0) -> bool:
         """连接所有服务器并等待工具就绪。"""
@@ -85,13 +90,18 @@ class McpManager:
         return self._ready.wait(timeout)
 
     def _connect_one(self, name: str, cfg: dict) -> None:
-        """单个服务器：在 portal 的 loop 中建立连接并保持。"""
+        """单个服务器：独立 portal 中建立连接并保持。"""
         import traceback
         try:
+            # 注意：anyio 4.x 的 start_blocking_portal 是同步 context manager
+            portal_cm = anyio.from_thread.start_blocking_portal()
+            portal = portal_cm.__enter__()
+            with self._lock:
+                self._portals[name] = portal
             if "url" in cfg:
-                self._portal.call(self._hold_sse, name, cfg["url"])
+                portal.call(self._hold_sse, name, cfg["url"])
             else:
-                self._portal.call(self._hold_stdio, name, cfg)
+                portal.call(self._hold_stdio, name, cfg)
         except Exception:
             logger.error("MCP 服务器 [%s] 连接失败:\n%s", name, traceback.format_exc())
 
@@ -160,11 +170,12 @@ class McpManager:
         """调用 MCP 工具（按注册名），返回文本结果。"""
         with self._lock:
             meta = self._tool_map.get(tool_name)
-        if meta is None:
+            portal = self._portals.get(meta["server"]) if meta else None
+        if meta is None or portal is None:
             return f"错误：未知 MCP 工具 {tool_name}"
 
         try:
-            result = self._portal.call(meta["session"].call_tool, meta["tool"], args or {})
+            result = portal.call(meta["session"].call_tool, meta["tool"], args or {})
         except Exception as e:
             return f"错误：MCP 工具调用失败 {e}"
 

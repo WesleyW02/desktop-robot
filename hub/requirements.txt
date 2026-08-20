@@ -26,3 +26,6 @@ pyyaml>=6.0
 # ---- 音频（语音对话 voice_loop.py 用）----
 sounddevice>=0.4.6
 numpy>=1.24
+
+# ---- RAG 知识库（分词检索）----
+jieba>=0.42.1

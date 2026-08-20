@@ -121,8 +121,20 @@ def run(args: dict) -> str:
 | 技能 | 功能 | 危险级 |
 |------|------|:---:|
 | `send_workbuddy` | 打开 WorkBuddy（未运行则启动）并发送消息 | 高（确认后发） |
+| `rag_search` | 本地知识库检索（RAG，BM25），基于项目文档回答问题 | 低 |
 
 示例：`你好，小萌` → 计划 → `send_workbuddy({"message": "..."})` → WorkBuddy 收到消息 ✅
+
+### RAG 知识库（基于项目文档回答问题）
+
+```yaml
+# config.yaml → rag.docs_dir（递归扫描 md/txt/yaml/py 等，自动分块+BM25 索引）
+rag:
+  docs_dir: "D:\\个人工作台\\桌面机器人"
+```
+
+Agent 通过 `rag_search` 技能按需检索知识库。实现：`hub/rag.py`（分块 + jieba 分词 + BM25）。
+实测：问"硬件预算组合" → 检索方案书 → 准确回答 ¥302/¥327/¥367 ✅
 
 ### MCP 扩展（动态工具）
 
@@ -135,17 +147,17 @@ mcp:
     test_server:                          # 演示（hub/test_mcp_server.py）
       command: python
       args: ["-u", "hub/test_mcp_server.py"]
-    # filesystem:
-    #   command: npx
-    #   args: ["-y", "@modelcontextprotocol/server-filesystem", "D:/"]
+    filesystem:                           # 真实文件系统服务器（hub/mcp_filesystem.py，只读）
+      command: python
+      args: ["-u", "hub/mcp_filesystem.py"]
     # github:
     #   url: "http://localhost:8080/mcp"
 ```
 
 - 本地 stdio 服务器（`command`+`args`）或远程 SSE/HTTP 服务器（`url`）均支持
-- 连接后工具自动出现在 M3 的工具列表，与内置工具同等可用（同样过安全确认）
+- **已连接真实服务器**：`filesystem`（list_dir / read_file / search_text / get_file_info，只读+根目录限制），M3 实测读取文档并准确总结 ✅
 - 自带 `hub/test_mcp_server.py` 演示服务器（get_time / list_dir），用于验证链路
-- 实现：`hub/mcp_tools.py`（McpManager 动态加载层）
+- 实现：`hub/mcp_tools.py`（McpManager 动态加载层，多服务器独立 portal + 错开启动规避 Windows 并发冲突）
 
 ### 语音闭环（Phase 2 · 免按键对话，本地可用）
 
