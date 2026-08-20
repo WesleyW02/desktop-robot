@@ -131,10 +131,16 @@ I2S 功放输出:   BCLK=15, LRC=16, DIN=7
 ## 5. 五阶段开发任务分解
 
 ### Phase 1：工程骨架 + 串口打通（约 1 天）
-- [ ] 建 `hub/` 与 `firmware/` 工程骨架、requirements.txt
-- [ ] ESP32：`config.h` 引脚映射 + `proto` JSON 编解码 + hello 握手
+- [x] 环境：arduino-cli 1.5.1（便携版）+ esp32 core 3.3.11 + 库（ArduinoJson / Adafruit GFX / ST7789 / ESP32Servo）
+- [x] ESP32：`config.h` 引脚映射 + `proto.h/.cpp`（协议 v2.0 JSON 分发 + ack/err/心跳/握手）
+- [x] `firmware.ino`：主循环（串口分发 + 防跌落 + 周期 telemetry）
+- [x] `servo_ctrl`：ESP32Servo 双舵机 + 软限位（0x10 越限回执）
+- [x] `motor_ctrl`：TB6612 双路 PWM + 编码器计数 + 防跌落刹停
+- [x] `display_ctrl`：ST7789 大眼睛表情（happy/sad/idle/sleep/surprise）+ 文字
+- [~] `audio_ctrl`：接口与 VAD 状态机骨架（I2S 驱动待硬件实测按 core 3.x API 填充）
+- [x] **编译通过**：FQBN `esp32:esp32:esp32s3:FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB`，376KB (11%)
 - [ ] Hub：`serial_bridge` 收发 + 命令行测试工具（发 face/text 指令）
-- [ ] 屏幕点亮：`display` 显示静态表情（大眼睛）
+- [ ] 板子到货：烧录 + 串口联通测试
 - **验收**：电脑命令下发 `{"type":"face","expr":"happy"}`，机器人屏幕显示表情
 
 ### Phase 2：MiniMax 语音链路（1-2 天）

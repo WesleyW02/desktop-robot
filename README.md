@@ -184,13 +184,33 @@ API Key 两种填法：`config.yaml` 的 `minimax.api_key`，或环境变量 `MI
 │   ├── test_tools.py        # 工具与 Agent 链路测试（✅）
 │   ├── requirements.txt
 │   └── models/              # 本地 ASR 模型（不入库）
-├── firmware/                # ESP32 固件（Arduino，C 风格）
+├── firmware/                # ESP32 固件（Arduino，C 风格，已编译通过）
+│   ├── firmware.ino         # 主程序：串口分发 + 防跌落 + 周期上报
+│   ├── proto.h/.cpp         # 协议 v2.0：JSON 解析 + ack/err/心跳/握手
+│   ├── servo_ctrl.*         # 双舵机 + 软限位（0x10 越限回执）
+│   ├── motor_ctrl.*         # TB6612 电机 + 编码器 + 防跌落
+│   ├── display_ctrl.*       # ST7789 大眼睛表情 + 文字
+│   ├── audio_ctrl.*         # 音频骨架（I2S 待硬件实测填充）
 │   └── config.h             # 引脚映射（已定稿）
 ├── docs/
-│   ├── protocol.md          # 通信协议规范
+│   ├── protocol.md          # 通信协议规范 v2.0
 │   └── development-plan.md  # 开发计划
 ├── generated-images/        # 外观概念图
 └── 桌面机器人项目方案书.md    # 项目方案（硬件/预算/路线）
+```
+
+### 固件开发（环境已配好）
+
+```bash
+# 工具：arduino-cli 1.5.1 便携版 + esp32 core 3.3.11（ArduinoJson/GFX/ST7789/ESP32Servo 已装）
+AC="C:/Users/72448/.workbuddy/binaries/arduino-cli/arduino-cli.exe"
+FQBN="esp32:esp32:esp32s3:FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
+
+# 编译（骨架已通过：376KB / 11%）
+"$AC" compile --fqbn "$FQBN" firmware/
+
+# 烧录（板子到货后，COM 口以设备管理器为准）
+"$AC" upload -p COM3 --fqbn "$FQBN" firmware/
 ```
 
 ## 硬件 BOM
